@@ -35,7 +35,7 @@ Research workflow — follow this order:
 1. search_tavily → get broad overview URLs on the topic
 2. fetch_tavily → read the most relevant URL to understand key concepts
 3. search_arxiv (for CS/AI/ML) or search_pubmed (for biomedical) → find academic papers
-4. fetch_arxiv or fetch_pubmed → get full details of a specific paper
+4. fetch_pubmed → get full details of a PubMed article (if needed)
 
 Format — follow this exactly:
 
@@ -51,7 +51,8 @@ Rules:
 - Only use tools listed above. Only ONE Action per step.
 - Each tool may only be called ONCE. Do not repeat a tool you already used.
 - Always Thought before Action or Final Answer.
-- If a tool returns an error, try a different approach.
+- Do NOT include the current year or date in search queries for search_arxiv or search_pubmed. Use only topic keywords.
+- If search_arxiv returns no results, try search_pubmed (or vice versa) instead of repeating the same tool.
 - If you can answer without tools, go directly to Final Answer.
 
 Output format for Final Answer:

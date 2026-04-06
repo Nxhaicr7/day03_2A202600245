@@ -7,7 +7,6 @@ Every function signature: def fn(args: str) -> str
 
 from datetime import datetime
 from src.tools.search_arxiv import search_arxiv
-from src.tools.fetch_arxiv import fetch_arxiv_paper
 from src.tools.search_pubmed import search_pubmed
 from src.tools.fetch_pubmed import efetch_tool
 from src.tools.tavily_search import tavily_search
@@ -96,14 +95,6 @@ TOOLS = [
             "Use for CS/AI/ML academic papers."
         ),
         "function": search_arxiv,
-    },
-    {
-        "name": "fetch_arxiv",
-        "description": (
-            "Fetch full details of a specific ArXiv paper by its ID. "
-            "Args: arxiv paper ID (str). Example: '2401.12345'"
-        ),
-        "function": fetch_arxiv_paper,
     },
     {
         "name": "search_pubmed",
