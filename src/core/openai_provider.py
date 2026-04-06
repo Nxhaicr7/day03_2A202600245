@@ -2,10 +2,11 @@ import time
 from typing import Dict, Any, Optional, Generator
 from openai import OpenAI
 from src.core.llm_provider import LLMProvider
+import os
 
 class OpenAIProvider(LLMProvider):
     def __init__(self, model_name: str = "qwen/qwen3.6-plus:free", api_key: Optional[str] = None):
-        super().__init__(model_name, api_key)
+        super().__init__(model_name, api_key=os.getenv("OPENAI_API_KEY"))
         self.client = OpenAI(api_key=self.api_key, base_url="https://openrouter.ai/api/v1") #openrouter
 
     def generate(self, prompt: str, system_prompt: Optional[str] = None) -> Dict[str, Any]:
