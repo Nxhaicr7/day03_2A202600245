@@ -1,87 +1,60 @@
-"""
-Tool: fetch_arxiv
-Searches arXiv for academic papers using the public arXiv API.
-No API key required — uses urllib only.
-"""
-
-import urllib.request
-import urllib.parse
+import requests
 import xml.etree.ElementTree as ET
 
+from src.tools.search_arxiv import fetch_arxiv, parse_arxiv_xml
 
-def fetch_arxiv(query: str, max_results: int = 5) -> list:
-    """
-    Searches arXiv for research papers matching the query using the arXiv public API.
-    Use this tool when the user asks to find, search, or look up academic papers,
-    research articles, or scientific publications on arXiv.
+ARXIV_ID_URL = "http://export.arxiv.org/api/query?id_list={paper_id}"
 
-    Args:
-        query (str): The search query or topic (e.g. "LLM agents", "transformer architecture").
-        max_results (int): Maximum number of results to return. Defaults to 5.
 
-    Returns:
-        list[dict]: A list of papers, each with keys:
-            - "title"   (str): Title of the paper.
-            - "authors" (list[str]): List of author names.
-            - "summary" (str): Short abstract of the paper.
-            - "url"     (str): Link to the arXiv paper page.
-            - "published" (str): Publication date (YYYY-MM-DD).
-    """
-    base_url = "http://export.arxiv.org/api/query"
-    params = urllib.parse.urlencode({
-        "search_query": f"all:{query}",
-        "start": 0,
-        "max_results": max_results,
-    })
-    url = f"{base_url}?{params}"
-
+def fetch_arxiv_paper(paper_id: str) -> str:
+    print(f"\n fetch_arxiv_paper | paper_id: '{paper_id}'")
     try:
-        with urllib.request.urlopen(url, timeout=10) as response:
-            xml_data = response.read().decode("utf-8")
-    except Exception as e:
-        print(f"Error fetching from arXiv API: {e}")
-        return []
+        url    = f"http://export.arxiv.org/api/query?id_list={paper_id}"
+        xml    = fetch_arxiv(url)
+        papers = parse_arxiv_xml(xml)
 
-    # Parse the Atom XML response
-    ns = {
-        "atom": "http://www.w3.org/2005/Atom",
-        "arxiv": "http://arxiv.org/schemas/atom",
-    }
+        if not papers:
+            return f"No paper found for ID: {paper_id}"
 
-    try:
-        root = ET.fromstring(xml_data)
+        p = papers[0]
+
+        lines = [
+            "=" * 60,
+            f"Title     : {p['title']}",
+            f"ArXiv ID  : {p['arxiv_id']}",
+            f"Published : {p['published']}",
+            f"Category  : {p['category']}",
+            f"Authors   : {', '.join(p['authors'])}",
+            "-" * 60,
+            f"Abstract  : {p['abstract']}",
+            "-" * 60,
+            f"PDF       : {p['pdf_url']}",
+            f"URL       : {p['abstract_url']}",
+            "=" * 60,
+        ]
+
+        return "\n".join(lines)
+
+    except requests.exceptions.Timeout:
+        return "Timeout: ArXiv did not respond. Try again later."
+    except requests.exceptions.ConnectionError:
+        return "Connection error: check your internet."
+    except requests.exceptions.HTTPError as e:
+        return f"HTTP {e.response.status_code}: {str(e)}"
     except ET.ParseError as e:
-        print(f"Error parsing arXiv response XML: {e}")
-        return []
-
-    results = []
-    for entry in root.findall("atom:entry", ns):
-        title_el   = entry.find("atom:title", ns)
-        summary_el = entry.find("atom:summary", ns)
-        published_el = entry.find("atom:published", ns)
-        id_el      = entry.find("atom:id", ns)
-        authors    = [a.find("atom:name", ns).text for a in entry.findall("atom:author", ns)
-                      if a.find("atom:name", ns) is not None]
-
-        results.append({
-            "title":     title_el.text.strip()     if title_el     is not None else "N/A",
-            "authors":   authors,
-            "summary":   summary_el.text.strip()   if summary_el   is not None else "N/A",
-            "url":       id_el.text.strip()        if id_el        is not None else "N/A",
-            "published": (published_el.text[:10]   if published_el is not None else "N/A"),
-        })
-
-    return results
+        return f"XML parse error: {str(e)}"
+    except Exception as e:
+        return f"Unexpected error: {str(e)}"
 
 
-# ── Tool spec dict for the ReAct agent ──────────────────────────────────────
-FETCH_ARXIV_SPEC = {
+# Tool Definition
+FETCH_ARXIV_TOOL = {
     "name": "fetch_arxiv",
     "description": (
-        "Searches arXiv for academic research papers on a given topic. "
-        "Use this when the user wants to find papers, articles, or research on arXiv. "
-        "Args: query (str) — the topic or keywords to search for; "
-        "max_results (int, optional) — number of results to return (default 5)."
+        "Fetch full details of a specific ArXiv paper by its ID. "
+        "Input: a single ArXiv paper ID string, e.g. '2401.12345'. "
+        "Returns title, authors, published date, category, abstract, and PDF URL. "
+        "Use when you already know the ArXiv ID and need the paper's full details."
     ),
-    "function": fetch_arxiv,
+    "function": fetch_arxiv_paper,
 }

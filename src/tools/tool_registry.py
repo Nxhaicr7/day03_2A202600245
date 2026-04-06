@@ -6,7 +6,10 @@ Every function signature: def fn(args: str) -> str
 """
 
 from datetime import datetime
-from src.tools.search_arxiv import search_arxiv, search_arxiv_multi
+from src.tools.search_arxiv import search_arxiv
+from src.tools.fetch_arxiv import fetch_arxiv_paper
+from src.tools.search_pubmed import search_pubmed
+from src.tools.fetch_pubmed import efetch_tool
 from src.tools.tavily_search import tavily_search
 from src.tools.tavily_extract import TavilyExtractTool
 
@@ -34,6 +37,28 @@ def _fetch_tavily(url: str) -> str:
     if not result.results:
         return "No content extracted."
     return result.results[0].preview(max_chars=1000)
+
+
+def _fetch_pubmed(pmid: str) -> str:
+    """Wrapper: takes a single PMID string, returns formatted article details."""
+    pmid = pmid.strip()
+    if not pmid:
+        return "Error: No PMID provided."
+    try:
+        result = efetch_tool([pmid])
+        articles = result.get("articles", [])
+        if not articles:
+            return f"No article found for PMID: {pmid}"
+        a = articles[0]
+        abstract = a.get("abstract", "N/A")
+        return (
+            f"Title   : {a.get('title', 'N/A')}\n"
+            f"Journal : {a.get('journal', 'N/A')}\n"
+            f"PMID    : {a.get('pmid', 'N/A')}\n"
+            f"Abstract: {abstract}"
+        )
+    except Exception as e:
+        return f"Error fetching PubMed article: {str(e)}"
 
 
 # --- Tool Definitions ---
@@ -68,18 +93,32 @@ TOOLS = [
             "Search for scientific papers on ArXiv. "
             "Simple input: 'RAG language model 2024'. "
             "Advanced: 'ti:attention AND au:vaswani'. "
-            "(ti=title, au=author, abs=abstract, all=all fields) "
             "Use for CS/AI/ML academic papers."
         ),
         "function": search_arxiv,
     },
     {
-        "name": "search_arxiv_multi",
+        "name": "fetch_arxiv",
         "description": (
-            "Search multiple topics on ArXiv in one call. "
-            "Input: pipe-separated queries, max 5. "
-            "Example: 'RAG 2024 | LoRA fine-tuning | ti:BERT AND abs:NLP'"
+            "Fetch full details of a specific ArXiv paper by its ID. "
+            "Args: arxiv paper ID (str). Example: '2401.12345'"
         ),
-        "function": search_arxiv_multi,
+        "function": fetch_arxiv_paper,
+    },
+    {
+        "name": "search_pubmed",
+        "description": (
+            "Search PubMed for biomedical and life-science research papers. "
+            "Args: query (str). Example: 'CRISPR gene therapy'"
+        ),
+        "function": search_pubmed,
+    },
+    {
+        "name": "fetch_pubmed",
+        "description": (
+            "Fetch full details of a PubMed article by its PMID. "
+            "Args: PMID (str). Example: '38012345'"
+        ),
+        "function": _fetch_pubmed,
     },
 ]

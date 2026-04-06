@@ -12,7 +12,7 @@ class ReActAgent:
     Students should implement the core loop logic and tool execution.
     """
 
-    def __init__(self, llm: LLMProvider, tools: List[Dict[str, Any]], max_steps: int = 5):
+    def __init__(self, llm: LLMProvider, tools: List[Dict[str, Any]], max_steps: int = 10):
         self.llm = llm
         self.tools = tools
         self.max_steps = max_steps
@@ -30,6 +30,12 @@ class ReActAgent:
 
 Available tools:
 {tool_descriptions}
+
+Research workflow — follow this order:
+1. search_tavily → get broad overview URLs on the topic
+2. fetch_tavily → read the most relevant URL to understand key concepts
+3. search_arxiv (for CS/AI/ML) or search_pubmed (for biomedical) → find academic papers
+4. fetch_arxiv or fetch_pubmed → get full details of a specific paper
 
 Format — follow this exactly:
 
