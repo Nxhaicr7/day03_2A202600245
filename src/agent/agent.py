@@ -25,25 +25,28 @@ class ReActAgent:
         tool_descriptions = "\n".join(
             [f"- {t['name']}: {t['description']}" for t in self.tools]
         )
-        date_line = f"For your context, today is: {date_context}\n\n" if date_context else ""
-        return (
-            f"You are a general research assistant. {date_line}"
-            "You have access to the following tools:\n"
-            f"{tool_descriptions}\n\n"
-            "You MUST follow this exact format for every step:\n\n"
-            "Thought: <your reasoning about what to do next>\n"
-            'Action: tool_name("argument")\n\n'
-            "You will then receive an Observation with the tool's result.\n"
-            "Continue with another Thought/Action or finish with:\n\n"
-            "Thought: <your final reasoning>\n"
-            "Final Answer: <your complete response to the user>\n\n"
-            "Rules:\n"
-            "- Only use the tools listed above.\n"
-            "- Only ONE Action per step.\n"
-            "- Always start with a Thought before an Action or Final Answer.\n"
-            "- If a tool returns an error, try a different approach.\n"
-            "- If you can answer without tools, go directly to Final Answer."
-        )
+        date_line = f"\nFor your context, today is: {date_context}" if date_context else ""
+        return f"""You are a general research assistant.{date_line}
+
+Available tools:
+{tool_descriptions}
+
+Format — follow this exactly:
+
+Thought: <reasoning>
+Action: tool_name("argument")
+
+After receiving an Observation, continue or finish:
+
+Thought: <final reasoning>
+Final Answer: <your response>
+
+Rules:
+- Only use tools listed above. Only ONE Action per step.
+- Each tool may only be called ONCE. Do not repeat a tool you already used.
+- Always Thought before Action or Final Answer.
+- If a tool returns an error, try a different approach.
+- If you can answer without tools, go directly to Final Answer."""
 
     @traceable(name="ReActAgent.run")
     def run(self, user_input: str) -> str:
